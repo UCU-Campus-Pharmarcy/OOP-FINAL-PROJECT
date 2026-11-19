@@ -64,3 +64,26 @@ def create_prescription(
 
     quantities: dict[str, int] = {}
     for line in iterator:
+        try:
+            code, quantity = line
+        except (TypeError, ValueError) as error:
+            raise PharmacyError("Each prescription line needs a medicine code and quantity.") from error
+        code = normalize_code(code)
+        quantity = require_positive_integer(quantity, "Line quantity")
+        quantities[code] = require_positive_integer(
+            quantities.get(code, 0) + quantity, f"Total quantity for {code}"
+        )
+    if not quantities:
+        raise PharmacyError("Add at least one medicine to the prescription.")
+
+    with closing(connect(db_path)) as connection, connection:
+        connection.execute("BEGIN IMMEDIATE")
+        if connection.execute("SELECT 1 FROM branches WHERE id = ?", (branch_id,)).fetchone() is None:
+            raise PharmacyError("Select an existing branch.")
+        for code in quantities:
+            if connection.execute("SELECT 1 FROM medicines WHERE code = ?", (code,)).fetchone() is None:
+                raise PharmacyError(f"Medicine {code} is not registered.")
+
+        cursor = connection.execute(
+            """INSERT INTO prescriptions (branch_id, patient_id, prescriber_code)
+            VALUES (?, ?, ?)""",

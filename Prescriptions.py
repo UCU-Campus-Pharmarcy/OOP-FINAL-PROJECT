@@ -87,3 +87,50 @@ def create_prescription(
         cursor = connection.execute(
             """INSERT INTO prescriptions (branch_id, patient_id, prescriber_code)
             VALUES (?, ?, ?)""",
+                        (branch_id, patient_id, prescriber_code),
+        )
+        prescription_id = cursor.lastrowid
+        connection.executemany(
+            """INSERT INTO prescription_lines (prescription_id, medicine_code, quantity)
+               VALUES (?, ?, ?)""",
+            ((prescription_id, code, quantity) for code, quantity in quantities.items()),
+        )
+    return prescription_id
+
+
+def dispense_prescription(prescription_id: int, *, db_path: str | Path = DB_PATH) -> None:
+    """Deduct every line and change status in one transaction, or roll back all."""
+    prescription_id = require_positive_integer(prescription_id, "Prescription ID")
+    with closing(connect(db_path)) as connection, connection:
+        # Acquire SQLite's write reservation before reading the current status.
+        connection.execute("BEGIN IMMEDIATE")
+        prescription = connection.execute(
+            "SELECT branch_id, prescriber_code, status FROM prescriptions WHERE id = ?",
+            (prescription_id,),
+        ).fetchone()
+        if prescription is None:
+            raise PharmacyError(f"Prescription {prescription_id} does not exist.")
+        if prescription["status"] == "Dispensed":
+            raise PharmacyError(f"Prescription {prescription_id} was already dispensed.")
+        if prescription["status"] == "Cancelled":
+            raise PharmacyError(f"Prescription {prescription_id} is cancelled and cannot be dispensed.")
+
+        lines = connection.execute(
+            """SELECT m.code, m.name, m.unit_price_minor, m.reorder_level,
+                      m.medicine_type, l.quantity
+               FROM prescription_lines AS l
+               JOIN medicines AS m ON m.code = l.medicine_code
+               WHERE l.prescription_id = ? ORDER BY m.code""",
+            (prescription_id,),
+        ).fetchall()
+        if not lines:
+            raise PharmacyError("The prescription has no medicine lines.")
+
+        # The same call dispatches to the ordinary or controlled implementation.
+        medicines = [medicine_from_row(line) for line in lines]
+        if any(medicine.requires_authorized_prescriber() for medicine in medicines):
+            approved = connection.execute(
+                "SELECT 1 FROM prescribers WHERE code = ?", (prescription["prescriber_code"],)
+            ).fetchone()
+            if approved is None:
+                raise PharmacyError("Controlled medicines require a prescriber code on the allow-list.")

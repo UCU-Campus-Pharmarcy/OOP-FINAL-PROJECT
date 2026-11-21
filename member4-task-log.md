@@ -52,3 +52,15 @@ Passed 16 automated tests covering authorization, rollback, cancellation status,
 Codex assistance included GUI examples, debugging, supporting backend and migration corrections, tests, Git, and documentation.
 
 [Implementation commit 7fb0bc4](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/7fb0bc4cc2daa5d5929c575e0a0e6fe8f7d69168)
+
+## 22 November 2026 - Day 6 work
+
+Connected the existing LowStockView as the sixth application tab. Its refresh callback runs alongside the stock and prescription callbacks when switching tabs.
+
+Manually verified Lake Campus MED001 appeared at quantity 3 with reorder level 5, remained listed after receiving 2 units to reach 5, and disappeared after receiving 1 more unit to reach 6. The final database check confirmed quantity 6 and an empty Lake Campus low-stock list.
+
+Ran all 16 tests successfully. Verified a fresh copy of the committed files could initialize its database, load fictional sample data, pass the same 16 tests, import the low-stock screen, and compile the GUI source.
+
+Updated the README with the six-screen workflow, Day 6 results, integration improvements, and a manual demo checklist. Codex assisted with integration examples, debugging, verification, Git, and documentation.
+
+[Implementation commit 7f1a7b9](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/7f1a7b90ad4d7ba12232449ab4e5a82f34e13ea9)

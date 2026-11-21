@@ -9,6 +9,18 @@ from pathlib import Path
 DB_PATH = Path(__file__).resolve().with_name("pharmacy.db")
 MAX_SQLITE_INTEGER = 2**63 - 1
 
+PRESCRIPTION_SCHEMA = """
+CREATE TABLE IF NOT EXISTS prescriptions (
+    id INTEGER PRIMARY KEY,
+    branch_id INTEGER NOT NULL REFERENCES branches(id),
+    prescriber_code TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Pending'
+        CHECK (status IN ('Pending', 'Dispensed', 'Cancelled')),
+    patient_id TEXT NOT NULL DEFAULT 'FICTIONAL-LEGACY'
+        CHECK (length(trim(patient_id)) > 0)
+);
+"""
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS medicines (
     code TEXT PRIMARY KEY NOT NULL CHECK (length(trim(code)) > 0),
@@ -37,13 +49,7 @@ CREATE TABLE IF NOT EXISTS prescribers (
     name TEXT NOT NULL CHECK (length(trim(name)) > 0)
 );
 
-CREATE TABLE IF NOT EXISTS prescriptions (
-    id INTEGER PRIMARY KEY,
-    branch_id INTEGER NOT NULL REFERENCES branches(id),
-    prescriber_code TEXT NOT NULL REFERENCES prescribers(code),
-    status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Dispensed'))
-);
-
+""" + PRESCRIPTION_SCHEMA + """
 CREATE TABLE IF NOT EXISTS prescription_lines (
     prescription_id INTEGER NOT NULL REFERENCES prescriptions(id),
     medicine_code TEXT NOT NULL REFERENCES medicines(code),
@@ -101,12 +107,51 @@ def _seed_database(connection: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_prescriptions(connection: sqlite3.Connection) -> None:
+    """Upgrade the original table without changing prescription IDs or lines."""
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(prescriptions)")}
+    foreign_keys = connection.execute("PRAGMA foreign_key_list(prescriptions)").fetchall()
+    table_sql = connection.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'prescriptions'"
+    ).fetchone()["sql"]
+    has_prescriber_foreign_key = any(row["from"] == "prescriber_code" for row in foreign_keys)
+    if "patient_id" in columns and "'Cancelled'" in table_sql and not has_prescriber_foreign_key:
+        return
+
+    connection.execute(
+        PRESCRIPTION_SCHEMA.replace("IF NOT EXISTS prescriptions", "prescriptions_migrated", 1)
+    )
+    patient_expression = "'FICTIONAL-LEGACY-' || id"
+    if "patient_id" in columns:
+        patient_expression = (
+            "CASE WHEN patient_id IS NOT NULL AND length(trim(patient_id)) > 0 "
+            "THEN patient_id ELSE 'FICTIONAL-LEGACY-' || id END"
+        )
+    connection.execute(
+        f"""INSERT INTO prescriptions_migrated
+                (id, branch_id, prescriber_code, status, patient_id)
+            SELECT id, branch_id, prescriber_code, status, {patient_expression}
+            FROM prescriptions"""
+    )
+    connection.execute("DROP TABLE prescriptions")
+    connection.execute("ALTER TABLE prescriptions_migrated RENAME TO prescriptions")
+
+
 def initialize_database(db_path: str | Path = DB_PATH, *, seed: bool = False) -> None:
-    """Create missing tables and optionally insert missing sample records."""
-    with closing(connect(db_path)) as connection, connection:
-        connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA)
-        if seed:
-            _seed_database(connection)
+    """Create or upgrade tables and optionally insert missing sample records."""
+    with closing(connect(db_path)) as connection:
+        # Replacing a referenced table requires disabling foreign keys before BEGIN.
+        connection.execute("PRAGMA foreign_keys = OFF")
+        try:
+            with connection:
+                connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA)
+                _migrate_prescriptions(connection)
+                if seed:
+                    _seed_database(connection)
+                if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                    raise sqlite3.IntegrityError("Database initialization found invalid foreign keys.")
+        finally:
+            connection.execute("PRAGMA foreign_keys = ON")
 
 
 def main() -> None:

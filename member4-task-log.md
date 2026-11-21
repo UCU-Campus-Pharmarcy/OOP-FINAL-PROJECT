@@ -38,3 +38,17 @@ The final saved balances for DAY3-001 were 15 at Day 4 clinic and 3 at Day 4 sat
 AI assistance from Codex included examples for tabs and callbacks, indentation debugging, verification, Git, and documentation.
 
 [Implementation commit cf8bd8f](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/cf8bd8fe91de44d5840047c4f316f9550404a01d)
+
+## 22 November 2026 - Day 5 work
+
+Added Create Prescription and Dispense tabs. Connected fictional patient IDs, branch selection, prescriber codes, and multiple draft medicine lines to the existing prescription workflow. Saved records display their patient, branch, and status.
+
+Manually saved prescription 1 for TEST-P001 at Cedar Campus with MED001 quantity 2 and MED002 quantity 1. Dispensing succeeded and a repeated dispense was rejected. The verified Cedar balances were 22 MED001 and 11 MED002.
+
+Corrected supporting prescription rules and added migration for older databases. Ordinary medicines allow a blank prescriber, while controlled medicines check the simulated allow-list within the dispensing transaction. Existing prescription IDs and lines survive migration, and older records receive fictional legacy patient IDs.
+
+Passed 16 automated tests covering authorization, rollback, cancellation status, persistence, and migration. Additional GUI callback checks used mocked widgets and temporary databases. Included the existing low-stock service as a dependency of the reproducible tests.
+
+Codex assistance included GUI examples, debugging, supporting backend and migration corrections, tests, Git, and documentation.
+
+[Implementation commit 7fb0bc4](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/7fb0bc4cc2daa5d5929c575e0a0e6fe8f7d69168)

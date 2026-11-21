@@ -7,6 +7,7 @@ from db import initialize_database
 from medicines import register_medicine, list_medicines
 from tkinter import messagebox, ttk
 from decimal import Decimal, InvalidOperation
+from low_stock_view import LowStockView
 
 
 def handle_register():
@@ -252,12 +253,14 @@ branch_tab = ttk.Frame(notebook)
 stock_tab = ttk.Frame(notebook)
 prescription_tab = ttk.Frame(notebook)
 dispense_tab = ttk.Frame(notebook)
+low_stock_tab = LowStockView(notebook)
 
 notebook.add(medicine_tab, text="Register Medicine")
 notebook.add(branch_tab, text="Branches")
 notebook.add(stock_tab, text="Receive Stock")
 notebook.add(prescription_tab, text="Create Prescription")
 notebook.add(dispense_tab, text="Dispense")
+notebook.add(low_stock_tab, text="Low Stock")
 
 tk.Label(medicine_tab, text="Register Medicine").pack(pady=12)
 tk.Label(medicine_tab, text="Medicine code").pack()
@@ -367,4 +370,9 @@ tk.Button(
 ).pack()
 notebook.bind("<<NotebookTabChanged>>", refresh_stock_choices)
 notebook.bind("<<NotebookTabChanged>>", refresh_prescriptions, add="+")
+notebook.bind(
+    "<<NotebookTabChanged>>",
+    lambda event: low_stock_tab.refresh(),
+    add="+"
+)
 window.mainloop()

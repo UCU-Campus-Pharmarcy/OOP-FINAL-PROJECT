@@ -12,7 +12,7 @@ python gui.py
 
 The application creates the SQLite database `pharmacy.db` when it starts.
 
-Use the Register Medicine, Branches, Receive Stock, Create Prescription, and Dispense tabs to complete the pharmacy workflow. Use fictional patient IDs when creating prescriptions.
+Use the Register Medicine, Branches, Receive Stock, Create Prescription, Dispense, and Low Stock tabs to complete the pharmacy workflow. Use fictional patient IDs when creating prescriptions.
 
 To load fictional sample data, run the following command before opening the application.
 
@@ -31,6 +31,18 @@ The tests use temporary SQLite databases.
 ```powershell
 python -m unittest discover -s tests -v
 ```
+
+## Manual demo checklist
+
+1. Register an ordinary medicine using an unused code and reorder level 5. Check that a zero price is rejected before saving a valid positive price.
+2. Create a branch using an unused name and verify that repeating the name is rejected.
+3. Receive 5 units of the new medicine at that branch. Check that quantities 0, -1, and 2.5 are rejected.
+4. Open Low Stock and select the branch. The medicine appears at quantity 5. Receive 1 more unit and return to Low Stock. It is now above the threshold and disappears from the list.
+5. At a branch with enough stock, create a prescription with a fictional patient ID and two medicine lines. Use the seeded prescriber DR001 when including controlled MED002. Dispense it and check the Dispensed status.
+6. Select the same prescription again and verify that a second dispense is rejected.
+7. Create a controlled-medicine prescription with prescriber BAD001. Dispensing produces an authorization error and the prescription stays Pending.
+8. Create a two-line prescription whose second medicine quantity exceeds available stock. Dispensing fails and the prescription stays Pending. The automated rollback test verifies that every stock deduction is rolled back.
+9. Restart the application and check that saved branches, medicines, prescription statuses, and low-stock results reload.
 
 ## Member 4 progress - Day 3, 19 November 2026
 
@@ -63,3 +75,12 @@ The final database check showed 15 units at Day 4 clinic and 3 units at Day 4 sa
 - Passed 16 automated tests covering authorization, ordinary medicines, multi-line rollback, repeat dispensing, persistence, and migration. Additional callback checks used mocked widgets and temporary databases.
 
 The task log records the code contribution, checks, and Codex assistance. [View Member 4's task log](member4-task-log.md)
+
+## Member 4 progress - Day 6, 22 November 2026
+
+- Connected the existing LowStockView as the sixth tab and refreshed it when switching tabs.
+- Verified Lake Campus MED001 appeared with quantity 3 and reorder level 5, still appeared at quantity 5, and disappeared after another receipt increased it to 6.
+- Ran all 16 automated tests successfully and added the manual demo checklist above.
+- Checked the application includes the modules needed for its six screens and recorded the work in the task log.
+
+Integration fixes included correcting dropdown refresh order and indentation, adding missing draft-line controls, and upgrading prescription storage and dispensing checks. Codex assisted with examples, debugging, verification, Git, and documentation. [View Member 4's task log](member4-task-log.md)

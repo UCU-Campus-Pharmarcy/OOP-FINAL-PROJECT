@@ -1,0 +1,66 @@
+\*\*17 November 2026 — Medicine code field\*\*
+
+
+
+I added an editable Medicine code field to the Register Medicine screen and tested it by typing `MED001`.
+
+
+
+\[GitHub commit `5755735`](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/5755735)
+
+
+## 18 November 2026 - Day 2
+
+Completed the Register Medicine form layout.
+
+[GitHub commit 1eb849e](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/1eb849ef49a3c51c9461f0f501b806bb1a2e7c0e)
+
+## 19 November 2026 - Day 3
+
+Connected the Register button to the existing medicine registration and SQLite modules. Added form validation and clear success and error messages.
+
+Manually checked missing fields, invalid prices and reorder levels, successful registration, duplicate-code rejection, and persistence after restarting the application.
+
+Included the existing database and medicine modules as GUI dependencies, corrected zero-price validation, and added launch and fictional sample-data instructions. Additional checks against a temporary database passed.
+
+AI assistance from Codex included callback and validation examples, indentation debugging, verification, and help with Git and this task log.
+
+[Implementation commit 67209ee](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/67209eef049b796f497aa2770ab85ac675f851c1)
+
+## 20 November 2026 - Day 4
+
+Added Register Medicine, Branches, and Receive Stock tabs. Connected branch creation and stock receipt to the existing stock module, included that module as a GUI dependency, and refreshed branch and medicine dropdowns when switching tabs.
+
+Manually checked branch creation, duplicate-name errors, stock receipt totals, invalid quantities, separate branch balances, and persistence after restarting. Automated callback checks against a temporary database also passed, including mapping sorted branch names to their actual database IDs.
+
+The final saved balances for DAY3-001 were 15 at Day 4 clinic and 3 at Day 4 satellite. Updated the README with today's work and verified figures.
+
+AI assistance from Codex included examples for tabs and callbacks, indentation debugging, verification, Git, and documentation.
+
+[Implementation commit cf8bd8f](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/cf8bd8fe91de44d5840047c4f316f9550404a01d)
+
+## 22 November 2026 - Day 5 work
+
+Added Create Prescription and Dispense tabs. Connected fictional patient IDs, branch selection, prescriber codes, and multiple draft medicine lines to the existing prescription workflow. Saved records display their patient, branch, and status.
+
+Manually saved prescription 1 for TEST-P001 at Cedar Campus with MED001 quantity 2 and MED002 quantity 1. Dispensing succeeded and a repeated dispense was rejected. The verified Cedar balances were 22 MED001 and 11 MED002.
+
+Corrected supporting prescription rules and added migration for older databases. Ordinary medicines allow a blank prescriber, while controlled medicines check the simulated allow-list within the dispensing transaction. Existing prescription IDs and lines survive migration, and older records receive fictional legacy patient IDs.
+
+Passed 16 automated tests covering authorization, rollback, cancellation status, persistence, and migration. Additional GUI callback checks used mocked widgets and temporary databases. Included the existing low-stock service as a dependency of the reproducible tests.
+
+Codex assistance included GUI examples, debugging, supporting backend and migration corrections, tests, Git, and documentation.
+
+[Implementation commit 7fb0bc4](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/7fb0bc4cc2daa5d5929c575e0a0e6fe8f7d69168)
+
+## 22 November 2026 - Day 6 work
+
+Connected the existing LowStockView as the sixth application tab. Its refresh callback runs alongside the stock and prescription callbacks when switching tabs.
+
+Manually verified Lake Campus MED001 appeared at quantity 3 with reorder level 5, remained listed after receiving 2 units to reach 5, and disappeared after receiving 1 more unit to reach 6. The final database check confirmed quantity 6 and an empty Lake Campus low-stock list.
+
+Ran all 16 tests successfully. Verified a fresh copy of the committed files could initialize its database, load fictional sample data, pass the same 16 tests, import the low-stock screen, and compile the GUI source.
+
+Updated the README with the six-screen workflow, Day 6 results, integration improvements, and a manual demo checklist. Codex assisted with integration examples, debugging, verification, Git, and documentation.
+
+[Implementation commit 7f1a7b9](https://github.com/UCU-Campus-Pharmarcy/OOP-FINAL-PROJECT/commit/7f1a7b90ad4d7ba12232449ab4e5a82f34e13ea9)

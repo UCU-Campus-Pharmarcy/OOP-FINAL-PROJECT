@@ -134,3 +134,28 @@ def dispense_prescription(prescription_id: int, *, db_path: str | Path = DB_PATH
             ).fetchone()
             if approved is None:
                 raise PharmacyError("Controlled medicines require a prescriber code on the allow-list.")
+            
+            branch_id = prescription["branch_id"]
+        for line in lines:
+            code = line["code"]
+            quantity = line["quantity"]
+            result = connection.execute(
+                """UPDATE stock SET quantity = quantity - ?
+                   WHERE branch_id = ? AND medicine_code = ? AND quantity >= ?""",
+                (quantity, branch_id, code, quantity),
+            )
+            if result.rowcount == 0:
+                stock = connection.execute(
+                    "SELECT quantity FROM stock WHERE branch_id = ? AND medicine_code = ?",
+                    (branch_id, code),
+                ).fetchone()
+                available = stock["quantity"] if stock else 0
+                # Let this escape the connection context to roll back earlier lines.
+                raise PharmacyError(
+                    f"Insufficient stock for {code} at this branch. "
+                    f"Need {quantity}, available {available}."
+                )
+
+        connection.execute(
+            "UPDATE prescriptions SET status = 'Dispensed' WHERE id = ?", (prescription_id,)
+        )

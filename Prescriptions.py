@@ -159,3 +159,39 @@ def dispense_prescription(prescription_id: int, *, db_path: str | Path = DB_PATH
         connection.execute(
             "UPDATE prescriptions SET status = 'Dispensed' WHERE id = ?", (prescription_id,)
         )
+        
+        
+def cancel_prescription(prescription_id: int, *, db_path: str | Path = DB_PATH) -> None:
+    """Cancel a pending prescription without changing inventory."""
+    prescription_id = require_positive_integer(prescription_id, "Prescription ID")
+    with closing(connect(db_path)) as connection, connection:
+        connection.execute("BEGIN IMMEDIATE")
+        prescription = connection.execute(
+            "SELECT status FROM prescriptions WHERE id = ?", (prescription_id,)
+        ).fetchone()
+        if prescription is None:
+            raise PharmacyError(f"Prescription {prescription_id} does not exist.")
+        if prescription["status"] != "Pending":
+            raise PharmacyError("Only pending prescriptions can be cancelled.")
+        connection.execute(
+            "UPDATE prescriptions SET status = 'Cancelled' WHERE id = ?", (prescription_id,)
+        )
+
+
+def list_prescribers(*, db_path: str | Path = DB_PATH) -> list[Prescriber]:
+    """Return the simulated allow-list for display in the application."""
+    with closing(connect(db_path)) as connection:
+        rows = connection.execute(
+            "SELECT code, name FROM prescribers ORDER BY name COLLATE NOCASE, code"
+        ).fetchall()
+    return [Prescriber(**row) for row in rows]
+
+
+def list_prescriptions(*, db_path: str | Path = DB_PATH) -> list[Prescription]:
+    """Return pending, dispensed, and cancelled records, newest first."""
+    with closing(connect(db_path)) as connection:
+        rows = connection.execute(
+            """SELECT id, branch_id, patient_id, prescriber_code, status
+               FROM prescriptions ORDER BY id DESC"""
+        ).fetchall()
+    return [Prescription(**row) for row in rows]
